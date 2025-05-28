@@ -94,7 +94,6 @@ function iniciar_simulacao()
     matriz_transicao = matrizes_cidade[cidade_selecionada]
     println("Cidade selecionada: $cidade_selecionada")
 
-    # ... continua com o restante da função já existente:
     println("\nEscolha o estado inicial:")
     for (i, estado) in enumerate(estados)
         println("[$i] $estado")
