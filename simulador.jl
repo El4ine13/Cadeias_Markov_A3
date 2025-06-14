@@ -25,20 +25,35 @@ matrizes_cidade = Dict(
     ]
 )
 
+# Variáveis globais
 resultado_simulacao = []
 resultado_cidades = []
 intervalos_simulados = 0
 estado_inicial = 1
 hora_inicial = 0
+cidade_anterior = ""
 
+# Funções principais
 function proximo_estado(matriz, estado_atual)
     probabilidades = matriz[estado_atual, :]
     proximo = sample(1:length(probabilidades), Weights(probabilidades))
     return proximo
 end
 
+function trafegando(cidade_atual)
+    global cidade_anterior
+    if cidade_anterior != ""
+        if cidade_atual != cidade_anterior
+            println("\nTrafegando de $cidade_anterior até $cidade_atual...")
+        else
+            println("\nTrafegando em $cidade_atual...")
+        end
+        sleep(3)
+    end
+    cidade_anterior = cidade_atual
+end
+
 function escolher_cidade()
-    println("\nEscolha a cidade para este intervalo:")
     println("[1] Salvador")
     println("[2] Feira de Santana")
     println("[3] Lauro de Freitas")
@@ -65,19 +80,33 @@ function simular_trafego(estados, intervalos, estado_inicial)
 
     println("\nEscolha a cidade inicial para começar a simulação:")
     cidade = escolher_cidade()
+    trafegando(cidade)
 
     for i in 1:intervalos
-        push!(trafego, estados[estado])
-        push!(cidades, cidade)
-
         total_minutos = (i - 1) * 30
         hora = hora_inicial + div(total_minutos, 60)
         minuto = mod(total_minutos, 60)
-        println("\n[$(i)] Intervalo das $(Dates.format(Time(hora % 24, minuto), "HH:MM"))")
-        println("Resultado: $(estados[estado]) na cidade $cidade")
+        estado_atual = estados[estado]
+        estado_anterior = i == 1 ? "N/A" : trafego[end]
+        cidade_anterior_local = i == 1 ? "N/A" : cidades[end]
+
+        println("\n" * "="^50)
+        println("Intervalo [$(i)] - Horário: $(Dates.format(Time(hora % 24, minuto), "HH:MM"))")
+        println("-"^50)
+        println("Estado Anterior: $estado_anterior")
+        println("Cidade Anterior: $cidade_anterior_local")
+        println("-"^50)
+        println("Estado Atual  : $estado_atual")
+        println("Cidade Atual  : $cidade")
+        println("="^50)
+
+        push!(trafego, estados[estado])
+        push!(cidades, cidade)
 
         if i < intervalos
+            println("\nEscolha a próxima cidade:")
             cidade = escolher_cidade()
+            trafegando(cidade)
             matriz = matrizes_cidade[cidade]
             estado = proximo_estado(matriz, estado)
         end
