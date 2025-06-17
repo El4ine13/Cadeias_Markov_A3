@@ -6,24 +6,25 @@ estados = ["Livre", "Lento", "Congestionado", "Acidente"]
 
 matrizes_cidade = Dict(
     "Salvador" => [
-        0.20  0.30  0.30  0.20;
-        0.10  0.20  0.50  0.20;
-        0.10  0.20  0.50  0.20;
-        0.10  0.10  0.30  0.50
+        0.15  0.30  0.40  0.15;
+        0.10  0.15  0.55  0.20;
+        0.05  0.15  0.60  0.20;
+        0.05  0.10  0.35  0.50
     ],
     "Feira de Santana" => [
-        0.30  0.40  0.20  0.10;
-        0.10  0.30  0.40  0.20;
+        0.15  0.30  0.40  0.15;
         0.10  0.20  0.50  0.20;
-        0.10  0.10  0.30  0.50
+        0.05  0.15  0.60  0.20;
+        0.05  0.10  0.35  0.50
     ],
     "Lauro de Freitas" => [
-        0.40  0.30  0.20  0.10;
-        0.20  0.40  0.30  0.10;
-        0.20  0.30  0.30  0.20;
-        0.10  0.20  0.30  0.40
+        0.15  0.30  0.35  0.20;
+        0.10  0.25  0.45  0.20;
+        0.05  0.20  0.60  0.15;
+        0.10  0.10  0.35  0.45
     ]
 )
+
 
 # Variáveis globais
 resultado_simulacao = []
@@ -34,10 +35,17 @@ hora_inicial = 0
 cidade_anterior = ""
 
 # Funções principais
-function proximo_estado(matriz, estado_atual)
-    probabilidades = matriz[estado_atual, :]
-    proximo = sample(1:length(probabilidades), Weights(probabilidades))
-    return proximo
+function proximo_estado(matriz, v_atual, estados)
+    v_next = matriz' * (v_atual ./ 100) * 100
+    v_next = vec(v_next)
+
+    distribuicao_atual = round.(v_atual; digits=1)
+    distribuicao_proxima = round.(v_next; digits=1)
+
+    pesos = distribuicao_proxima ./ 100
+    estado_escolhido = sample(1:length(estados), Weights(pesos))
+
+    return estado_escolhido, v_next, distribuicao_atual, distribuicao_proxima
 end
 
 function trafegando(cidade_atual)
@@ -76,31 +84,37 @@ end
 function simular_trafego(estados, intervalos, estado_inicial)
     trafego = []
     cidades = []
-    estado = estado_inicial
 
     println("\nEscolha a cidade inicial para começar a simulação:")
     cidade = escolher_cidade()
     trafegando(cidade)
+    matriz = matrizes_cidade[cidade]
+
+    v = zeros(length(estados))
+    v[estado_inicial] = 100.0
+    estado = estado_inicial
 
     for i in 1:intervalos
         total_minutos = (i - 1) * 30
         hora = hora_inicial + div(total_minutos, 60)
         minuto = mod(total_minutos, 60)
-        estado_atual = estados[estado]
+
+        estado_nome = estados[estado]
         estado_anterior = i == 1 ? "N/A" : trafego[end]
         cidade_anterior_local = i == 1 ? "N/A" : cidades[end]
 
-        println("\n" * "="^50)
+        println("\n" * "="^58)
         println("Intervalo [$(i)] - Horário: $(Dates.format(Time(hora % 24, minuto), "HH:MM"))")
-        println("-"^50)
-        println("Estado Anterior: $estado_anterior")
-        println("Cidade Anterior: $cidade_anterior_local")
-        println("-"^50)
-        println("Estado Atual  : $estado_atual")
-        println("Cidade Atual  : $cidade")
-        println("="^50)
+        println("-"^58)
+        println("Estado Anterior : $estado_anterior")
+        println("Cidade Anterior : $cidade_anterior_local")
+        println("-"^58)
+        println("Distribuição Atual    : $(round.(v; digits=6))%")
+        println("Estado Atual          : $estado_nome")
+        println("Cidade Atual          : $cidade")
+        println("="^58)
 
-        push!(trafego, estados[estado])
+        push!(trafego, estado_nome)
         push!(cidades, cidade)
 
         if i < intervalos
@@ -108,7 +122,10 @@ function simular_trafego(estados, intervalos, estado_inicial)
             cidade = escolher_cidade()
             trafegando(cidade)
             matriz = matrizes_cidade[cidade]
-            estado = proximo_estado(matriz, estado)
+
+            estado, v_next, dist_atual, dist_proxima = proximo_estado(matriz, v, estados)
+            v = v_next
+
         end
     end
 
@@ -166,7 +183,7 @@ end
 
 function mostrar_estatisticas()
     if isempty(resultado_simulacao)
-        println("Você precisa executar a simulação primeiro.")
+        println("\nVocê precisa executar a simulação primeiro.")
         return
     end
 
@@ -185,7 +202,7 @@ end
 
 function previsao_com_pausa()
     if isempty(resultado_simulacao)
-        println("Você precisa executar a simulação primeiro.")
+        println("\nVocê precisa executar a simulação primeiro.")
         return
     end
 
