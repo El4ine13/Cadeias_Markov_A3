@@ -103,16 +103,16 @@ function simular_trafego(estados, intervalos, estado_inicial)
         estado_anterior = i == 1 ? "N/A" : trafego[end]
         cidade_anterior_local = i == 1 ? "N/A" : cidades[end]
 
-        println("\n" * "="^58)
+        println("\n" * "="^70)
         println("Intervalo [$(i)] - Horário: $(Dates.format(Time(hora % 24, minuto), "HH:MM"))")
-        println("-"^58)
+        println("-"^70)
         println("Estado Anterior : $estado_anterior")
         println("Cidade Anterior : $cidade_anterior_local")
-        println("-"^58)
+        println("-"^70)
         println("Distribuição Atual    : $(round.(v; digits=6))%")
         println("Estado Atual          : $estado_nome")
         println("Cidade Atual          : $cidade")
-        println("="^58)
+        println("="^70)
 
         push!(trafego, estado_nome)
         push!(cidades, cidade)
